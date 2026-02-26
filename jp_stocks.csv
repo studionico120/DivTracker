@@ -1,5 +1,5 @@
 Symbol,Description,Price,DividendYield,DividendPerShare,Sector
-7203,トヨタ自動車,3656,2.613480055,90,Consumer durables
+7203,トヨタ自動車,3657,2.613480055,90,Consumer durables
 8306,三菱ＵＦＪフィナンシャル・グループ,2888,2.515295717,64,Finance
 9984,ソフトバンクグループ,4096,0.2541002541,11,Communications
 8316,三井住友フィナンシャルグループ,5808,2.347811504,122,Finance
@@ -3932,4 +3932,5 @@ Symbol,Description,Price,DividendYield,DividendPerShare,Sector
 472A,ミラティブ,492,,,Technology services
 469A,フィットクルー,2550,,,Consumer services
 478A,フツパー,702,,,Technology services
+
 475A,ギミック,1049,,,Technology services
