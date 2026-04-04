@@ -1,1 +1,49 @@
+name: Update Stock Data
 
+on:
+  schedule:
+    # 毎週日曜 UTC 15:00（日本時間 月曜 0:00）に実行
+    - cron: '0 15 * * 0'
+  workflow_dispatch:
+    # 手動実行も可能
+
+permissions:
+  contents: write
+
+jobs:
+  update-stock-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install yfinance pandas python-dateutil
+
+      - name: Run stock data updater
+        run: python scripts/update_stocks.py
+
+      - name: Validate output
+        run: python scripts/validate_csv.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/jp_stocks.csv data/us_stocks.csv
+          
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+            git commit -m "Auto-update stock data: ${TIMESTAMP}"
+            git push
+          fi
