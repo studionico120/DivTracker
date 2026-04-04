@@ -77,12 +77,14 @@ def load_jp_master() -> dict[str, tuple[str, str]]:
         print(f"⚠ {JP_MASTER} が見つかりません。空の銘柄リストで続行します。")
         return result
     
-    df = pd.read_csv(JP_MASTER, dtype=str)
+    df = pd.read_csv(JP_MASTER, dtype=str).fillna("")
     for _, row in df.iterrows():
-        ticker = row["ticker"].strip()
-        name = row["name"].strip()
-        sector = row["sector"].strip()
-        yf_ticker = f"{ticker}.T"  # yfinance 用に .T を付与
+        ticker = str(row["ticker"]).strip()
+        if not ticker:  # 空行をスキップ
+            continue
+        name = str(row["name"]).strip()
+        sector = str(row["sector"]).strip()
+        yf_ticker = f"{ticker}.T"
         result[yf_ticker] = (name, sector)
     
     return result
@@ -101,10 +103,12 @@ def load_us_master() -> dict[str, str]:
         print(f"⚠ {US_MASTER} が見つかりません。空の銘柄リストで続行します。")
         return result
     
-    df = pd.read_csv(US_MASTER, dtype=str)
+    df = pd.read_csv(US_MASTER, dtype=str).fillna("")
     for _, row in df.iterrows():
-        ticker = row["ticker"].strip()
-        sector = row["sector"].strip()
+        ticker = str(row["ticker"]).strip()
+        if not ticker:  # 空行をスキップ
+            continue
+        sector = str(row["sector"]).strip()
         result[ticker] = sector
     
     return result
