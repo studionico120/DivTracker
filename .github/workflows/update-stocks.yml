@@ -12,7 +12,7 @@ permissions:
 jobs:
   update-stock-data:
     runs-on: ubuntu-latest
-    timeout-minutes: 90  # 大量銘柄対応（無料枠: 2000分/月に対し月4回=360分）
+    timeout-minutes: 360  # 6時間（GitHub Actions の上限値）
 
     steps:
       - name: Checkout repository
