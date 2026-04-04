@@ -1,16 +1,15 @@
 """
-配当プラス - 株価データ自動更新スクリプト v3.2
-旧コードの実績ある設計を踏襲しつつ、支払い月推定・overrides対応を追加。
+配当プラス - 株価データ自動更新スクリプト v3.3
 
-旧コードから取り入れた設計：
+v3.2 からの変更点：
+  - dividendYield の正規化を追加（yfinanceが百分率で返す場合の対応）
+  - dividendYield > 1 の場合、/100 して小数に変換
+    （現実に利回り100%超の株式は存在しないため安全に判定可能）
+
+設計（v3.2 から継続）：
   ① ThreadPoolExecutor(max_workers=3) で3並列取得
   ② random.uniform(0.8, 1.5) のランダムスリープ（bot検知回避）
   ③ バッチごとにCSV保存 → 中断しても再開可能（レジューム機能）
-
-想定所要時間：
-  日本株 4,400銘柄: 約30分
-  米国株 11,600銘柄: 約85分
-  合計: 約2時間（6時間制限に余裕）
 """
 
 import yfinance as yf
@@ -26,12 +25,12 @@ from dateutil.relativedelta import relativedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # === 設定 ===
-MAX_WORKERS = 3          # 3並列（旧コードで実績あり）
-BATCH_SIZE = 50          # 50件ごとに中間保存
-BASE_SLEEP_MIN = 0.8     # 1件あたりのランダム待機（下限）
-BASE_SLEEP_MAX = 1.5     # 1件あたりのランダム待機（上限）
-BATCH_SLEEP = 2          # バッチ間の休憩（秒）
-RATE_LIMIT_SLEEP = 180   # レート制限時（3分、旧コード踏襲）
+MAX_WORKERS = 3
+BATCH_SIZE = 50
+BASE_SLEEP_MIN = 0.8
+BASE_SLEEP_MAX = 1.5
+BATCH_SLEEP = 2
+RATE_LIMIT_SLEEP = 180
 
 PAYMENT_OFFSET_JP = 3
 PAYMENT_OFFSET_US = 1
@@ -44,8 +43,6 @@ US_CSV = DATA_DIR / "us_stocks.csv"
 OVERRIDES_FILE = DATA_DIR / "overrides.json"
 JP_MASTER = DATA_DIR / "jp_ticker_master.csv"
 US_MASTER = DATA_DIR / "us_ticker_master.csv"
-
-# レジューム用の中間ファイル（完了後に削除）
 JP_PROGRESS = DATA_DIR / "_jp_progress.csv"
 US_PROGRESS = DATA_DIR / "_us_progress.csv"
 
@@ -104,6 +101,36 @@ def load_overrides() -> dict:
     return {}
 
 
+# === 利回りの正規化 ===
+
+def normalize_dividend_yield(raw_yield: float) -> float:
+    """
+    yfinance の dividendYield を正規化する。
+
+    yfinance は銘柄によって返し方が不統一：
+      パターンA: 0.0299  → 2.99%（小数形式、これが正しい）
+      パターンB: 2.99    → 2.99%（百分率形式、/100 が必要）
+      パターンC: 299.0   → 明らかに異常値（ETF等）→ 0 にする
+
+    判定ルール：
+      0 ≤ value ≤ 1     → そのまま使う（小数形式）
+      1 < value ≤ 100   → /100 して小数に変換（百分率形式）
+      100 < value        → 異常値として 0 を返す
+    """
+    if raw_yield is None or raw_yield <= 0:
+        return 0.0
+
+    if raw_yield <= 1.0:
+        # パターンA: 0.0299 → そのまま
+        return raw_yield
+    elif raw_yield <= 100.0:
+        # パターンB: 2.99 → 0.0299 に変換
+        return raw_yield / 100.0
+    else:
+        # パターンC: 異常値 → 0
+        return 0.0
+
+
 # === 配当関連 ===
 
 def estimate_payment_month(ex_date, market: str) -> str:
@@ -117,7 +144,6 @@ def estimate_payment_month(ex_date, market: str) -> str:
 
 
 def get_dividend_details(ticker_obj, market: str) -> str:
-    """配当履歴を ex:|pay: 形式で取得"""
     try:
         dividends = ticker_obj.dividends
         if dividends is None or dividends.empty:
@@ -130,7 +156,6 @@ def get_dividend_details(ticker_obj, market: str) -> str:
         if recent.empty:
             return ""
 
-        # 次回支払い日の取得を試みる
         next_payment = None
         try:
             info = ticker_obj.info or {}
@@ -156,15 +181,10 @@ def get_dividend_details(ticker_obj, market: str) -> str:
         return ""
 
 
-# === 1銘柄の取得（スレッドから呼ばれる） ===
+# === 1銘柄の取得 ===
 
 def process_ticker(ticker: str, market: str, one_year_ago) -> dict | str | None:
-    """
-    1銘柄の全データを取得する。
-    旧コードと同じ設計：ランダムスリープ → 取得 → 429ならBLOCK返却
-    """
     try:
-        # 人間のクリック間隔を模倣するランダム待機
         time.sleep(random.uniform(BASE_SLEEP_MIN, BASE_SLEEP_MAX))
 
         stock = yf.Ticker(ticker)
@@ -174,11 +194,15 @@ def process_ticker(ticker: str, market: str, one_year_ago) -> dict | str | None:
             return None
 
         price = info.get("regularMarketPrice") or info.get("currentPrice", 0) or 0
-        dividend_yield = info.get("dividendYield", 0) or 0
+
+        # ★ 利回りの正規化（v3.3 の主な変更点）
+        raw_yield = info.get("dividendYield", 0) or 0
+        dividend_yield = normalize_dividend_yield(raw_yield)
+
         dividend_rate = info.get("dividendRate", 0) or 0
+
         yf_name = info.get("shortName") or info.get("longName") or ""
 
-        # 配当詳細は配当がある銘柄のみ（時間節約）
         div_details = ""
         if dividend_rate > 0:
             div_details = get_dividend_details(stock, market)
@@ -200,39 +224,25 @@ def process_ticker(ticker: str, market: str, one_year_ago) -> dict | str | None:
 
 # === 市場ごとの取得（レジューム対応） ===
 
-def fetch_market(
-    symbols: list[str],
-    market: str,
-    progress_file: Path,
-) -> list[dict]:
-    """
-    旧コードの設計を踏襲：
-      - 3並列で取得
-      - 50件ごとに中間保存（レジューム用）
-      - 429検知で3分停止
-      - 進捗ログ
-    """
+def fetch_market(symbols: list[str], market: str, progress_file: Path) -> list[dict]:
     global rate_limit_count
     one_year_ago = datetime.now() - timedelta(days=365)
 
-    # --- レジューム：中間ファイルがあれば続きから ---
+    # レジューム
     results = []
     done_tickers = set()
-
     if progress_file.exists():
         try:
             df_progress = pd.read_csv(progress_file, dtype=str).fillna("")
             results = df_progress.to_dict("records")
             done_tickers = {r["ticker"] for r in results}
-            # 型を復元
             for r in results:
                 r["price"] = float(r.get("price", 0) or 0)
                 r["yield_x100"] = int(float(r.get("yield_x100", 0) or 0))
                 r["annual_div"] = float(r.get("annual_div", 0) or 0)
             log(f"  レジューム: {len(done_tickers)}銘柄取得済み → 続きから開始")
         except Exception:
-            results = []
-            done_tickers = set()
+            results, done_tickers = [], set()
 
     remaining = [s for s in symbols if s not in done_tickers]
     total_all = len(symbols)
@@ -247,7 +257,6 @@ def fetch_market(
     batch_success = 0
     batch_skip = 0
 
-    # --- バッチ処理 ---
     for i in range(0, total_remaining, BATCH_SIZE):
         batch = remaining[i : i + BATCH_SIZE]
         batch_num = i // BATCH_SIZE + 1
@@ -258,21 +267,17 @@ def fetch_market(
                 executor.submit(process_ticker, t, market, one_year_ago): t
                 for t in batch
             }
-
             for future in as_completed(future_to_ticker):
                 ticker_sym = future_to_ticker[future]
                 try:
                     res = future.result()
-
                     if res == "BLOCK":
                         rate_limit_count += 1
                         log(f"  🚫 レート制限(429)検知（{rate_limit_count}回目）→ {RATE_LIMIT_SLEEP}秒停止...")
                         time.sleep(RATE_LIMIT_SLEEP)
-                        # ブロックされた銘柄は空データで記録（前回データで補完される）
                         results.append({
-                            "ticker": ticker_sym,
-                            "price": 0, "yield_x100": 0, "annual_div": 0,
-                            "yf_name": "", "div_details": "",
+                            "ticker": ticker_sym, "price": 0, "yield_x100": 0,
+                            "annual_div": 0, "yf_name": "", "div_details": "",
                         })
                         batch_skip += 1
                     elif res:
@@ -280,21 +285,18 @@ def fetch_market(
                         batch_success += 1
                     else:
                         results.append({
-                            "ticker": ticker_sym,
-                            "price": 0, "yield_x100": 0, "annual_div": 0,
-                            "yf_name": "", "div_details": "",
+                            "ticker": ticker_sym, "price": 0, "yield_x100": 0,
+                            "annual_div": 0, "yf_name": "", "div_details": "",
                         })
                         batch_skip += 1
-
                 except Exception:
                     results.append({
-                        "ticker": ticker_sym,
-                        "price": 0, "yield_x100": 0, "annual_div": 0,
-                        "yf_name": "", "div_details": "",
+                        "ticker": ticker_sym, "price": 0, "yield_x100": 0,
+                        "annual_div": 0, "yf_name": "", "div_details": "",
                     })
                     batch_skip += 1
 
-        # --- バッチ完了：中間保存 + 進捗ログ ---
+        # 中間保存
         pd.DataFrame(results).to_csv(progress_file, index=False, encoding="utf-8")
 
         fetched_so_far = len(done_tickers) + i + len(batch)
@@ -307,7 +309,6 @@ def fetch_market(
             f"成功:{batch_success} スキップ:{batch_skip} | "
             f"残り約{int(remaining_time / 60)}分")
 
-        # バッチ間の短い休憩
         if i + BATCH_SIZE < total_remaining:
             time.sleep(BATCH_SLEEP)
 
@@ -357,7 +358,6 @@ def load_existing_csv(path: Path) -> pd.DataFrame | None:
 
 def merge_with_existing(new_data: list[dict], existing_df: pd.DataFrame | None,
                         ticker_col: str) -> list[dict]:
-    """株価0の銘柄を前回の最終CSVで補完"""
     if existing_df is None:
         return new_data
     if ticker_col not in existing_df.columns:
@@ -419,7 +419,6 @@ def write_us_csv(data: list[dict], path: Path):
 
 
 def cleanup_progress():
-    """レジューム用の中間ファイルを削除"""
     for f in [JP_PROGRESS, US_PROGRESS]:
         if f.exists():
             f.unlink()
@@ -430,8 +429,8 @@ def cleanup_progress():
 
 def main():
     log("=" * 60)
-    log("配当プラス 株価データ自動更新 v3.2")
-    log("（3並列 + ランダムスリープ + レジューム対応）")
+    log("配当プラス 株価データ自動更新 v3.3")
+    log("（3並列 + ランダムスリープ + レジューム + 利回り正規化）")
     log("=" * 60)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -476,7 +475,6 @@ def main():
     us_data = merge_with_existing(us_data, existing_us, "Ticker")
     write_us_csv(us_data, US_CSV)
 
-    # --- レジューム用ファイルの削除 ---
     cleanup_progress()
 
     # --- サマリー ---
