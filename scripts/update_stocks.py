@@ -49,30 +49,43 @@ US_CSV = DATA_DIR / "us_stocks.csv"
 OVERRIDES_FILE = DATA_DIR / "overrides.json"
 
 # === 銘柄リスト ===
+#
+# 日本株：("日本語企業名", "セクター") のタプルで定義
+#   → yfinance は英語名（"Mitsubishi Corp."）しか返さないため、
+#     ここで日本語名を定義しておく。
+#   → 銘柄追加時にこの辞書に1行追加するだけで、名前もセクターも反映される。
+#
+# 米国株："セクター" の文字列のみ
+#   → 企業名は yfinance から自動取得（英語のまま使う）
+#
+
 JP_TICKERS = {
-    "8058.T": "商社",     # 三菱商事
-    "8031.T": "商社",     # 三井物産
-    "8001.T": "商社",     # 伊藤忠商事
-    "9432.T": "通信",     # NTT
-    "9433.T": "通信",     # KDDI
-    "9434.T": "通信",     # ソフトバンク
-    "8306.T": "金融",     # 三菱UFJ
-    "8316.T": "金融",     # 三井住友FG
-    "8411.T": "金融",     # みずほFG
-    "2914.T": "食品",     # JT
-    "7203.T": "自動車",   # トヨタ
-    "4502.T": "医薬品",   # 武田薬品
-    "4503.T": "医薬品",   # アステラス製薬
-    "6758.T": "電機",     # ソニーG
-    "6861.T": "電機",     # キーエンス
-    "8766.T": "保険",     # 東京海上
-    "8591.T": "金融",     # オリックス
-    "9101.T": "海運",     # 日本郵船
-    "1928.T": "建設",     # 積水ハウス
-    "5020.T": "石油",     # ENEOS
+    # "ティッカー.T": ("日本語名", "セクター"),
+    "8058.T": ("三菱商事", "商社"),
+    "8031.T": ("三井物産", "商社"),
+    "8001.T": ("伊藤忠商事", "商社"),
+    "9432.T": ("日本電信電話", "通信"),
+    "9433.T": ("KDDI", "通信"),
+    "9434.T": ("ソフトバンク", "通信"),
+    "8306.T": ("三菱UFJフィナンシャル・グループ", "金融"),
+    "8316.T": ("三井住友フィナンシャルグループ", "金融"),
+    "8411.T": ("みずほフィナンシャルグループ", "金融"),
+    "2914.T": ("日本たばこ産業", "食品"),
+    "7203.T": ("トヨタ自動車", "自動車"),
+    "4502.T": ("武田薬品工業", "医薬品"),
+    "4503.T": ("アステラス製薬", "医薬品"),
+    "6758.T": ("ソニーグループ", "電機"),
+    "6861.T": ("キーエンス", "電機"),
+    "8766.T": ("東京海上ホールディングス", "保険"),
+    "8591.T": ("オリックス", "金融"),
+    "9101.T": ("日本郵船", "海運"),
+    "1928.T": ("積水ハウス", "建設"),
+    "5020.T": ("ENEOSホールディングス", "石油"),
 }
 
 US_TICKERS = {
+    # "ティッカー": "セクター",
+    # 企業名は yfinance の info["shortName"] から自動取得
     "AAPL": "Technology",
     "MSFT": "Technology",
     "JNJ": "Healthcare",
@@ -95,6 +108,22 @@ US_TICKERS = {
     "HD": "Consumer Discretionary",
     "O": "Real Estate",
 }
+
+
+def get_jp_name(ticker_symbol: str) -> str:
+    """JP_TICKERS から日本語企業名を取得する"""
+    entry = JP_TICKERS.get(ticker_symbol)
+    if entry and isinstance(entry, tuple):
+        return entry[0]
+    return ""
+
+
+def get_jp_sector(ticker_symbol: str) -> str:
+    """JP_TICKERS からセクターを取得する"""
+    entry = JP_TICKERS.get(ticker_symbol)
+    if entry and isinstance(entry, tuple):
+        return entry[1]
+    return ""
 
 
 def log(msg: str):
@@ -244,8 +273,13 @@ def fetch_single_ticker(ticker_symbol: str, market: str) -> dict | None:
     return None
 
 
-def fetch_batch(ticker_symbols: list[str], sector_map: dict, market: str) -> list[dict]:
-    """銘柄リストをバッチ処理で取得する"""
+def fetch_batch(ticker_symbols: list[str], market: str) -> list[dict]:
+    """
+    銘柄リストをバッチ処理で取得する。
+    
+    日本株：企業名は JP_TICKERS の日本語名を使う（yfinanceの英語名は捨てる）
+    米国株：企業名は yfinance の shortName をそのまま使う
+    """
     results = []
     total = len(ticker_symbols)
 
@@ -259,9 +293,17 @@ def fetch_batch(ticker_symbols: list[str], sector_map: dict, market: str) -> lis
             data = fetch_single_ticker(symbol, market)
             if data:
                 data["ticker"] = symbol
-                data["sector"] = sector_map.get(symbol, "")
+
+                if market == "JP":
+                    # 日本株：辞書から日本語名とセクターを取得
+                    data["name"] = get_jp_name(symbol) or data["name"]
+                    data["sector"] = get_jp_sector(symbol)
+                else:
+                    # 米国株：yfinance の名前をそのまま使い、辞書からセクターを取得
+                    data["sector"] = US_TICKERS.get(symbol, "")
+
                 results.append(data)
-                log(f"  ✓ {symbol}: ¥{data['price']} / {data['yield_x100'] / 100:.2f}%")
+                log(f"  ✓ {symbol} ({data['name']}): {data['price']} / {data['yield_x100'] / 100:.2f}%")
             else:
                 log(f"  ✗ {symbol}: スキップ（前回データを維持）")
 
@@ -382,7 +424,7 @@ def main():
     # --- 日本株 ---
     log("\n=== 日本株 ===")
     jp_symbols = list(JP_TICKERS.keys())
-    jp_data = fetch_batch(jp_symbols, JP_TICKERS, market="JP")
+    jp_data = fetch_batch(jp_symbols, market="JP")
     jp_data = apply_overrides(jp_data, overrides)
     jp_data = merge_with_existing(jp_data, existing_jp, "銘柄コード")
     write_jp_csv(jp_data, JP_CSV)
@@ -393,7 +435,7 @@ def main():
     # --- 米国株 ---
     log("=== 米国株 ===")
     us_symbols = list(US_TICKERS.keys())
-    us_data = fetch_batch(us_symbols, US_TICKERS, market="US")
+    us_data = fetch_batch(us_symbols, market="US")
     us_data = apply_overrides(us_data, overrides)
     us_data = merge_with_existing(us_data, existing_us, "Ticker")
     write_us_csv(us_data, US_CSV)
