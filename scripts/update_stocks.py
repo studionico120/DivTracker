@@ -1,10 +1,12 @@
 """
-配当プラス - 株価データ自動更新スクリプト v3.3
+配当プラス - 株価データ自動更新スクリプト v3.4
 
-v3.2 からの変更点：
-  - dividendYield の正規化を追加（yfinanceが百分率で返す場合の対応）
-  - dividendYield > 1 の場合、/100 して小数に変換
-    （現実に利回り100%超の株式は存在しないため安全に判定可能）
+v3.3 からの変更点：
+  - 利回りを yfinance の dividendYield に頼らず、自力計算に変更
+    （年間配当額 ÷ 株価 × 10000 で正確に算出）
+    → yfinance が100倍ズレた値を返す既知問題を根本解決
+  - 企業名が数値のみの場合、ティッカーシンボルで代替
+    → yfinance が一部銘柄で数値を返す問題の対応
 
 設計（v3.2 から継続）：
   ① ThreadPoolExecutor(max_workers=3) で3並列取得
@@ -101,36 +103,6 @@ def load_overrides() -> dict:
     return {}
 
 
-# === 利回りの正規化 ===
-
-def normalize_dividend_yield(raw_yield: float) -> float:
-    """
-    yfinance の dividendYield を正規化する。
-
-    yfinance は銘柄によって返し方が不統一：
-      パターンA: 0.0299  → 2.99%（小数形式、これが正しい）
-      パターンB: 2.99    → 2.99%（百分率形式、/100 が必要）
-      パターンC: 299.0   → 明らかに異常値（ETF等）→ 0 にする
-
-    判定ルール：
-      0 ≤ value ≤ 1     → そのまま使う（小数形式）
-      1 < value ≤ 100   → /100 して小数に変換（百分率形式）
-      100 < value        → 異常値として 0 を返す
-    """
-    if raw_yield is None or raw_yield <= 0:
-        return 0.0
-
-    if raw_yield <= 1.0:
-        # パターンA: 0.0299 → そのまま
-        return raw_yield
-    elif raw_yield <= 100.0:
-        # パターンB: 2.99 → 0.0299 に変換
-        return raw_yield / 100.0
-    else:
-        # パターンC: 異常値 → 0
-        return 0.0
-
-
 # === 配当関連 ===
 
 def estimate_payment_month(ex_date, market: str) -> str:
@@ -194,14 +166,19 @@ def process_ticker(ticker: str, market: str, one_year_ago) -> dict | str | None:
             return None
 
         price = info.get("regularMarketPrice") or info.get("currentPrice", 0) or 0
-
-        # ★ 利回りの正規化（v3.3 の主な変更点）
-        raw_yield = info.get("dividendYield", 0) or 0
-        dividend_yield = normalize_dividend_yield(raw_yield)
-
         dividend_rate = info.get("dividendRate", 0) or 0
 
+        # ★ 利回りは自力計算（yfinance の dividendYield は100倍ズレることがあるため）
+        #   年間配当額 ÷ 株価 で正確に算出
+        if price > 0 and dividend_rate > 0:
+            yield_x100 = round(dividend_rate / float(price) * 10000)
+        else:
+            yield_x100 = 0
+
+        # ★ 企業名の検証（yfinance が数値を返すことがある → ティッカーで代替）
         yf_name = info.get("shortName") or info.get("longName") or ""
+        if not yf_name or yf_name.replace(".", "").replace("-", "").isdigit():
+            yf_name = ticker.replace(".T", "")
 
         div_details = ""
         if dividend_rate > 0:
@@ -210,7 +187,7 @@ def process_ticker(ticker: str, market: str, one_year_ago) -> dict | str | None:
         return {
             "ticker": ticker,
             "price": round(float(price), 2),
-            "yield_x100": round(dividend_yield * 10000),
+            "yield_x100": yield_x100,
             "annual_div": round(float(dividend_rate), 4),
             "yf_name": yf_name,
             "div_details": div_details,
