@@ -1,1 +1,200 @@
-
+Ticker,Company,Price,Yield(%),AnnualDiv,Sector,DivDetails
+AEF,27762,7.38,962,0.71,金融,"ex:2025-06-23|pay:2025-07:0.15, ex:2025-09-23|pay:2025-10:0.17, ex:2025-12-31|pay:2026-01:0.18, ex:2026-03-24|pay:2019-01:0.21"
+AEG,Aegon Ltd. New York Registry Sh,7.36,637,0.47,金融,ex:2025-06-17|pay:2026-07:0.22
+AEHL,Antelope Enterprise Holdings Li,1.11,0,0.0,資本財,
+AEHR,Aehr Test Systems,44.32,0,0.0,情報技術,
+AEI,Alset Inc.,1.75,0,0.0,不動産,
+AEIS,Advanced Energy Industries, Inc,332.31,1200,0.4,資本財,"ex:2025-05-23|pay:2025-06:0.1, ex:2025-08-25|pay:2025-09:0.1, ex:2025-11-24|pay:2025-12:0.1, ex:2026-02-23|pay:2026-03:0.1"
+AEM,Agnico Eagle Mines Limited,208.54,8600,1.8,素材,"ex:2025-05-30|pay:2025-06:0.4, ex:2025-09-02|pay:2025-10:0.4, ex:2025-12-01|pay:2026-01:0.4, ex:2026-03-02|pay:2026-12:0.45"
+AEMD,Aethlon Medical, Inc.,2.12,0,0.0,ヘルスケア,
+AEMS,Anfield Enhanced Market ETF,10.14,0,0.0,,
+AENT,Alliance Entertainment Holding ,6.68,0,0.0,コミュニケーション・サービス,
+AENTW,Adara Acquisition Corp. Redeema,0.65,0,0.0,,
+AEO,American Eagle Outfitters, Inc.,16.84,297,0.5,一般消費財,"ex:2025-04-11|pay:2025-05:0.125, ex:2025-07-11|pay:2025-08:0.125, ex:2025-10-10|pay:2025-11:0.125, ex:2026-01-09|pay:2026-04:0.125"
+AEON,AEON Biopharma, Inc.,0.89,0,0.0,ヘルスケア,
+AEP,American Electric Power Company,132.68,286,3.8,公益事業,"ex:2025-05-09|pay:2025-06:0.93, ex:2025-08-08|pay:2025-09:0.93, ex:2025-11-10|pay:2025-12:0.95, ex:2026-02-10|pay:2026-03:0.95"
+AER,AerCap Holdings N.V.,139.18,115,1.6,資本財,"ex:2025-05-14|pay:2025-06:0.27, ex:2025-08-13|pay:2025-09:0.27, ex:2026-02-25|pay:2026-03:0.4"
+AERT,Aeries Technology, Inc.,0.48,0,0.0,資本財,
+AERTW,Aeries Technology, Inc,0.02,0,0.0,,
+AES,The AES Corporation,14.3,492,0.7,公益事業,"ex:2025-05-01|pay:2025-06:0.176, ex:2025-08-01|pay:2025-09:0.176, ex:2025-10-31|pay:2025-11:0.176, ex:2026-01-30|pay:2026-05:0.176"
+AESI,Atlas Energy Solutions Inc.,12.15,823,1.0,エネルギー,"ex:2025-05-15|pay:2025-06:0.25, ex:2025-08-14|pay:2025-08:0.25"
+AESR,Anfield U.S. Equity Sector Rota,17.02,2194,0.0,,
+AETH,Bitwise Trendwise Ether and Tre,34.16,248,0.0,,
+AEVA,Aeva Technologies, Inc.,13.23,0,0.0,情報技術,
+AEYE,AudioEye, Inc.,6.63,0,0.0,情報技術,
+AFB,AllianceBernstein National Muni,10.48,527,0.55,金融,"ex:2025-05-01|pay:2025-06:0.04, ex:2025-06-05|pay:2025-07:0.04, ex:2025-07-03|pay:2025-08:0.04, ex:2025-08-07|pay:2025-09:0.04, ex:2025-09-04|pay:2025-10:0.047, ex:2025-10-02|pay:2025-11:0.047, ex:2025-11-06|pay:2025-12:0.05, ex:2025-12-04|pay:2026-01:0.05, ex:2026-01-08|pay:2026-02:0.05, ex:2026-02-05|pay:2026-03:0.05, ex:2026-03-05|pay:2026-04:0.05, ex:2026-04-02|pay:2019-02:0.05"
+AFBI,Affinity Bancshares, Inc.,22.27,0,0.0,金融,
+AFCG,Advanced Flower Capital Inc.,2.81,2057,0.58,不動産,"ex:2025-06-30|pay:2025-07:0.15, ex:2025-09-30|pay:2025-10:0.15, ex:2026-03-31|pay:2026-04:0.05"
+AFG,American Financial Group, Inc.,129.71,271,3.52,金融,"ex:2025-04-15|pay:2025-05:0.8, ex:2025-07-15|pay:2025-08:0.8, ex:2025-10-15|pay:2025-11:0.88, ex:2025-11-17|pay:2025-12:2.0, ex:2026-01-15|pay:2026-02:0.88, ex:2026-02-13|pay:2026-02:1.5"
+AFGC,American Financial Group, Inc. ,18.18,0,0.0,,
+AFGD,American Financial Group, Inc. ,19.85,0,0.0,,
+AFGE,American Financial Group, Inc. ,16.24,0,0.0,,
+AFIF,Anfield Universal Fixed Income ,9.34,357,0.0,,
+AFIX,Allspring Broad Market Core Bon,24.95,466,0.0,,
+AFJK,Aimei Health Technology Co., Lt,25.46,0,0.0,金融,
+AFJKR,Aimei Health Technology Co., Lt,0.3,0,0.0,,
+AFJKU,Aimei Health Technology Co., Lt,35.48,0,0.0,金融,
+AFK,VanEck Africa Index ETF,25.93,9000,0.0,,
+AFL,AFLAC Incorporated,110.48,221,2.44,金融,"ex:2025-05-21|pay:2025-06:0.58, ex:2025-08-20|pay:2025-09:0.58, ex:2025-11-19|pay:2025-12:0.58, ex:2026-02-18|pay:2026-03:0.61"
+AFLG,First Trust Active Factor Large,38.93,8100,0.0,,
+AFMC,First Trust Active Factor Mid C,36.0,8900,0.0,,
+AFOS,ARS Focused Opportunity Strateg,36.98,0,0.0,,
+AFRI,Forafric Global PLC,9.78,0,0.0,生活必需品,
+AFRIW,Forafric Global PLC Warrants,0.75,0,0.0,,
+AFRM,Affirm Holdings, Inc.,46.31,0,0.0,金融,
+AFRU,T-REX 2X Long AFRM Daily Target,4.82,0,0.0,,
+AFSC,abrdn Focused U.S. Small Cap Ac,31.14,700,0.0,,
+AFSM,First Trust Active Factor Small,33.35,5600,0.0,,
+AFYA,Afya Limited,14.96,439,0.66,生活必需品,ex:2026-03-25|pay:2026-04:0.656
+AG,First Majestic Silver Corp.,21.84,1000,0.02,素材,"ex:2025-05-16|pay:2025-06:0.005, ex:2026-02-27|pay:2026-03:0.008"
+AGAE,Allied Gaming & Entertainment I,0.29,0,0.0,コミュニケーション・サービス,
+AGBK,AGI Inc,7.18,0,0.0,金融,
+AGCC,Agencia Comercial Spirits Ltd,15.49,0,0.0,生活必需品,
+AGCO,AGCO Corporation,114.59,101,1.16,資本財,"ex:2025-05-15|pay:2025-06:0.29, ex:2025-08-15|pay:2025-09:0.29, ex:2025-11-14|pay:2025-12:0.29, ex:2026-02-13|pay:2026-03:0.29"
+AGD,"abrdn Global Dynamic Dividend ,10.94,1316,1.44,金融,"ex:2025-04-23|pay:2025-05:0.11, ex:2025-05-22|pay:2025-06:0.1, ex:2025-06-23|pay:2025-07:0.11, ex:2025-07-24|pay:2025-08:0.11, ex:2025-08-22|pay:2025-09:0.11, ex:2025-09-23|pay:2025-10:0.11, ex:2025-10-24|pay:2025-11:0.11, ex:2025-11-21|pay:2025-12:0.12, ex:2025-12-31|pay:2026-01:0.12, ex:2026-01-23|pay:2026-02:0.12, ex:2026-02-20|pay:2026-03:0.12, ex:2026-03-24|pay:2019-01:0.12"
+AGEM,abrdn Emerging Markets Dividend,40.49,184,0.0,,
+AGEN,Agenus Inc.,3.33,0,0.0,ヘルスケア,
+AGG,iShares Core U.S. Aggregate Bon,99.23,383,0.0,,
+AGGA,EA Astoria Dynamic Core US Fixe,25.17,0,0.0,,
+AGGH,Simplify Aggregate Bond ETF,20.4,743,0.0,,
+AGGS,Harbor Disciplined Bond ETF,40.83,527,0.0,,
+AGGY,WisdomTree Yield Enhanced U.S. ,43.64,440,0.0,,
+AGH,Aureus Greenway Holdings Inc.,3.92,0,0.0,一般消費財,
+AGI,Alamos Gold Inc.,46.01,2500,0.12,素材,"ex:2025-06-12|pay:2025-07:0.025, ex:2026-03-12|pay:2026-03:0.04"
+AGIO,Agios Pharmaceuticals, Inc.,35.2,0,0.0,ヘルスケア,
+AGIQ,SoFi Agentic AI ETF,20.33,0,0.0,,
+AGIX,KraneShares Artificial Intellig,33.5,0,0.0,,
+AGL,agilon health, inc.,10.74,0,0.0,ヘルスケア,
+AGM,Federal Agricultural Mortgage C,150.3,406,6.1,金融,"ex:2025-06-16|pay:2025-07:1.5, ex:2025-09-15|pay:2025-10:1.5, ex:2025-12-15|pay:2026-01:1.5, ex:2026-03-16|pay:2026-03:1.6"
+AGMB,AgomAb Therapeutics NV,10.72,0,0.0,ヘルスケア,
+AGMH,AGM Group Holdings Inc.,0.87,0,0.0,情報技術,
+AGMI,Themes Silver Miners ETF,69.82,317,0.0,,
+AGNC,AGNC Investment Corp.,10.15,1419,1.44,不動産,"ex:2025-04-30|pay:2025-05:0.12, ex:2025-05-30|pay:2025-06:0.12, ex:2025-06-30|pay:2025-07:0.12, ex:2025-07-31|pay:2025-08:0.12, ex:2025-08-29|pay:2025-09:0.12, ex:2025-09-30|pay:2025-10:0.12, ex:2025-10-31|pay:2025-11:0.12, ex:2025-11-28|pay:2025-12:0.12, ex:2025-12-31|pay:2026-01:0.12, ex:2026-01-30|pay:2026-02:0.12, ex:2026-02-27|pay:2026-03:0.12, ex:2026-03-31|pay:2026-04:0.12"
+AGNCL,AGNC Investment Corp. - Deposit,24.1,805,1.94,不動産,"ex:2025-07-01|pay:2025-08:0.484, ex:2025-10-01|pay:2025-11:0.484, ex:2025-12-31|pay:2026-01:0.484, ex:2026-04-01|pay:2026-04:0.484"
+AGNCM,AGNC Investment Corp. - Deposit,23.89,916,2.19,不動産,"ex:2025-07-01|pay:2025-08:0.56, ex:2025-10-01|pay:2025-11:0.569, ex:2025-12-31|pay:2026-01:0.542, ex:2026-04-01|pay:2026-04:0.517"
+AGNCN,AGNC Investment Corp. - Deposit,24.94,959,2.39,不動産,"ex:2025-07-01|pay:2025-08:0.609, ex:2025-10-01|pay:2025-11:0.619, ex:2025-12-31|pay:2026-01:0.592, ex:2026-04-01|pay:2026-04:0.565"
+AGNCO,AGNC Investment Corp. - Deposit,24.61,957,2.36,不動産,"ex:2025-07-01|pay:2025-08:0.601, ex:2025-10-01|pay:2025-11:0.612, ex:2025-12-31|pay:2026-01:0.584, ex:2026-04-01|pay:2026-04:0.558"
+AGNCP,AGNC Investment Corp. - Deposit,23.91,953,2.28,不動産,"ex:2025-07-01|pay:2025-08:0.583, ex:2025-10-01|pay:2025-11:0.593, ex:2025-12-31|pay:2026-01:0.566, ex:2026-04-01|pay:2026-04:0.539"
+AGNCZ,AGNC Investment Corp. - Deposit,24.69,529,1.31,不動産,"ex:2025-12-31|pay:2026-01:0.76, ex:2026-04-01|pay:2026-04:0.547"
+AGNG,Global X Aging Population ETF,35.96,8200,0.0,,
+AGO,Assured Guaranty Ltd.,81.1,187,1.52,金融,"ex:2025-05-16|pay:2025-06:0.34, ex:2026-03-06|pay:2026-03:0.38"
+AGOX,Adaptive Alpha Opportunities ET,27.29,0,0.0,,
+AGPU,Axe Compute Inc.,4.07,0,0.0,情報技術,
+AGQ,ProShares Ultra Silver,110.77,0,0.0,,
+AGQI,First Trust Active Global Quali,17.02,228,0.0,,
+AGRH,iShares Interest Rate Hedged U.,26.09,464,0.0,,
+AGRO,Adecoagro S.A.,15.22,230,0.35,生活必需品,ex:2025-05-02|pay:2025-11:0.175
+AGRW,Allspring LT Large Growth ETF,27.44,0,0.0,,
+AGRZ,Agroz Inc.,0.49,0,0.0,生活必需品,
+AGX,Argan, Inc.,575.16,3500,2.0,資本財,"ex:2025-04-22|pay:2025-05:0.375, ex:2025-07-23|pay:2025-08:0.375, ex:2025-10-23|pay:2025-11:0.5, ex:2026-01-22|pay:2026-01:0.5"
+AGYS,Agilysys, Inc.,71.09,0,0.0,情報技術,
+AGZ,iShares  Agency Bond ETF,109.46,372,0.0,,
+AGZD,WisdomTree Interest Rate Hedged,22.55,406,0.0,,
+AHCO,AdaptHealth Corp.,12.03,0,0.0,ヘルスケア,
+AHG,Akso Health Group,2.22,0,0.0,ヘルスケア,
+AHLT,AHL Trend ETF,28.58,152,0.0,,
+AHMA,Ambitions Enterprise Management,1.16,0,0.0,一般消費財,
+AHR,American Healthcare REIT, Inc.,48.09,208,1.0,不動産,"ex:2025-06-30|pay:2025-07:0.25, ex:2025-09-30|pay:2025-10:0.25, ex:2025-12-31|pay:2026-01:0.25, ex:2026-03-31|pay:2026-04:0.25"
+AHRT,AH Realty Trust, Inc.,5.67,988,0.56,不動産,"ex:2025-06-30|pay:2025-07:0.14, ex:2025-09-24|pay:2025-10:0.14, ex:2025-12-31|pay:2026-01:0.14, ex:2026-03-26|pay:2026-04:0.14"
+AHT,Ashford Hospitality Trust Inc,2.59,0,0.0,不動産,
+AHYB,American Century Select High Yi,46.21,587,0.0,,
+AI,C3.ai, Inc.,8.64,0,0.0,情報技術,
+AIA,iShares Asia 50 ETF,105.62,131,0.0,,
+AIB,BlockchAIn Digital Infrastructu,1.16,0,0.0,,
+AIBD,Direxion Daily AI and Big Data ,9.52,360,0.0,,
+AIBU,Direxion Daily AI and Big Data ,37.73,284,0.0,,
+AIDX,20/20 Biolabs, Inc.,1.83,0,0.0,ヘルスケア,
+AIEQ,Amplify AI Powered Equity ETF,43.6,4200,0.0,,
+AIFD,TCW Artificial Intelligence ETF,39.82,0,0.0,,
+AIFF,Firefly Neuroscience, Inc.,2.12,0,0.0,情報技術,
+AIFU,AIFU Inc.,1.47,0,0.0,金融,
+AIG,American International Group, I,75.42,239,1.8,金融,"ex:2025-06-13|pay:2025-07:0.45, ex:2025-09-16|pay:2025-10:0.45, ex:2025-12-16|pay:2026-01:0.45, ex:2026-03-16|pay:2026-03:0.45"
+AIHS,Senmiao Technology Limited,1.17,0,0.0,資本財,
+AII,American Integrity Insurance Gr,19.19,0,0.0,金融,
+AIIA,AI Infrastructure Acquisition C,10.04,0,0.0,,
+AIIO,Robo.ai Inc.,0.07,0,0.0,一般消費財,
+AIIOW,Robo.ai Inc.,0.02,0,0.0,,
+AIMD,Ainos, Inc.,1.44,0,0.0,情報技術,
+AIMDW,AINOS INC C/WTS 29/07/2027 (TO ,0.12,0,0.0,,
+AIMS,Acuitas Small Cap Active ETF,24.04,0,0.0,,
+AIN,Albany International Corporatio,52.26,214,1.12,一般消費財,"ex:2025-06-06|pay:2025-07:0.27, ex:2025-09-02|pay:2025-10:0.27, ex:2025-12-16|pay:2026-01:0.28, ex:2026-03-20|pay:2026-04:0.28"
+AINP,Allspring Income Plus ETF,24.91,502,0.0,,
+AINT,FINQ DOLLAR NEUTRAL U.S. Large ,24.84,0,0.0,,
+AIO,AllianzGI Artificial Intelligen,21.8,826,1.8,金融,"ex:2025-04-11|pay:2025-05:0.15, ex:2025-05-12|pay:2025-06:0.15, ex:2025-06-12|pay:2025-07:0.15, ex:2025-07-11|pay:2025-08:0.15, ex:2025-08-11|pay:2025-09:0.15, ex:2025-09-12|pay:2025-10:0.15, ex:2025-10-14|pay:2025-11:0.15, ex:2025-11-13|pay:2025-12:0.15, ex:2025-12-11|pay:2026-01:0.15, ex:2025-12-29|pay:2026-01:1.191, ex:2026-01-12|pay:2026-02:0.15, ex:2026-02-12|pay:2026-03:0.15, ex:2026-03-16|pay:2021-02:0.15"
+AIOO,AllianzIM U.S. Equity Buffer100,25.7,0,0.0,,
+AIOS,AIOS Tech Inc.,0.55,0,0.0,情報技術,
+AIOT,PowerFleet, Inc.,3.08,0,0.0,情報技術,
+AIP,Arteris, Inc.,18.2,0,0.0,情報技術,
+AIPI,REX AI Equity Premium Income ET,34.21,4120,0.0,,
+AIPO,Defiance AI & Power Infrastruct,25.44,0,0.0,,
+AIQ,Global X Artificial Intelligenc,47.27,1900,0.0,,
+AIR,AAR Corp.,109.78,0,0.0,資本財,
+AIRE,reAlpha Tech Corp.,0.25,0,0.0,不動産,
+AIRG,Airgain, Inc.,5.44,0,0.0,情報技術,
+AIRI,Air Industries Group,3.23,0,0.0,資本財,
+AIRJ,AirJoule Technologies Corporati,2.68,0,0.0,資本財,
+AIRJW,AirJoule Technologies Corporation,0.62,0,0.0,,
+AIRO,AIRO Group Holdings, Inc.,8.71,0,0.0,資本財,
+AIRR,First Trust RBA American Indust,112.87,1500,0.0,,
+AIRS,AirSculpt Technologies, Inc.,3.17,0,0.0,ヘルスケア,
+AIRT,Air T, Inc.,21.7,0,0.0,資本財,
+AIRTP,Air T, Inc. - Trust Preferred S,19.25,1039,2.0,資本財,"ex:2025-05-14|pay:2025-06:0.5, ex:2025-08-14|pay:2025-09:0.5, ex:2025-11-14|pay:2025-12:0.5, ex:2026-02-13|pay:2027-11:0.5"
+AIS,VistaShares Artificial Intellig,43.33,0,0.0,,
+AISP,Airship AI Holdings, Inc,2.25,0,0.0,情報技術,
+AISPW,Airship AI Holdings, Inc.,0.7,0,0.0,,
+AIT,Applied Industrial Technologies,267.12,7600,2.04,資本財,"ex:2025-05-15|pay:2025-06:0.46, ex:2025-08-15|pay:2025-09:0.46, ex:2025-11-14|pay:2025-12:0.46, ex:2026-02-13|pay:2026-02:0.51"
+AIUP,FINQ FIRST U.S. Large Cap AI-Ma,23.88,0,0.0,,
+AIV,Apartment Investment and Manage,4.05,0,0.0,不動産,
+AIVC,Amplify Bloomberg AI Value Chai,71.25,1600,0.0,,
+AIVI,WisdomTree International AI Enh,54.57,418,0.0,,
+AIVL,WisdomTree U.S. AI Enhanced Val,117.41,150,0.0,,
+AIXC,AIxCrypto Holdings, Inc.,1.28,0,0.0,情報技術,
+AIXI,XIAO-I Corporation,0.13,0,0.0,情報技術,
+AIYY,YieldMax AI Option Income Strat,9.84,0,0.0,,
+AIZ,Assurant, Inc.,218.26,154,3.36,金融,"ex:2025-06-09|pay:2025-07:0.8, ex:2025-09-02|pay:2025-10:0.8, ex:2025-12-01|pay:2026-01:0.88, ex:2026-02-17|pay:2026-03:0.88"
+AJAN,Innovator Equity Defined Protec,27.69,0,0.0,,
+AJG,Arthur J. Gallagher & Co.,217.61,129,2.8,金融,"ex:2025-06-06|pay:2025-07:0.65, ex:2025-09-05|pay:2025-10:0.65, ex:2025-12-05|pay:2026-01:0.65, ex:2026-03-06|pay:2026-03:0.7"
+AJUL,Innovator Equity Defined Protec,29.1,0,0.0,,
+AKA,a.k.a. Brands Holding Corp.,10.49,0,0.0,一般消費財,
+AKAF,The Frontier Economic Fund,31.15,0,0.0,,
+AKAM,Akamai Technologies, Inc.,118.0,0,0.0,情報技術,
+AKAN,Akanda Corp.,0.69,0,0.0,ヘルスケア,
+AKBA,Akebia Therapeutics, Inc.,1.38,0,0.0,ヘルスケア,
+AKR,Acadia Realty Trust,19.42,412,0.8,不動産,"ex:2025-06-30|pay:2025-07:0.2, ex:2025-09-30|pay:2025-10:0.2, ex:2025-12-31|pay:2026-01:0.2, ex:2026-03-31|pay:2026-04:0.2"
+AKTS,Aktis Oncology, Inc.,17.37,0,0.0,ヘルスケア,
+AKTX,Akari Therapeutics Plc,4.47,0,0.0,ヘルスケア,
+AL,Air Lease Corporation,64.95,135,0.88,資本財,"ex:2025-06-04|pay:2025-07:0.22, ex:2025-09-03|pay:2025-10:0.22, ex:2025-12-04|pay:2026-01:0.22, ex:2026-03-02|pay:2026-04:0.22"
+ALAB,Astera Labs, Inc.,117.14,0,0.0,情報技術,
+ALAI,Alger AI Enablers & Adopters ET,33.7,158,0.0,,
+ALAR,Alarum Technologies Ltd.,6.25,0,0.0,情報技術,
+ALB,Albemarle Corporation,178.09,9100,1.62,素材,"ex:2025-06-13|pay:2025-07:0.405, ex:2025-09-12|pay:2025-10:0.405, ex:2025-12-12|pay:2026-01:0.405, ex:2026-03-13|pay:2026-04:0.405"
+ALBG,Leverage Shares 2X Long ALB Dai,14.83,0,0.0,,
+ALBT,Avalon GloboCare Corp.,0.58,0,0.0,不動産,
+ALC,Alcon Inc.,74.56,4500,0.33,ヘルスケア,ex:2025-05-13|pay:2025-05:0.331
+ALCO,Alico, Inc.,42.16,4700,0.2,生活必需品,"ex:2025-06-27|pay:2025-07:0.05, ex:2025-09-26|pay:2025-10:0.05, ex:2026-01-02|pay:2026-02:0.05, ex:2026-04-02|pay:2026-04:0.05"
+ALCY,Alchemy Investments Acquisition,11.88,0,0.0,金融,
+ALCYU,Alchemy Investments Acquisition,15.0,0,0.0,金融,
+ALCYW,Alchemy Investments Acquisition,0.14,0,0.0,,
+ALDF,Aldel Financial II Inc.,10.56,0,0.0,金融,
+ALDFU,Aldel Financial II Inc.,10.65,0,0.0,金融,
+ALDFW,Aldel Financial II Inc. Warrant,0.35,0,0.0,,
+ALDX,Aldeyra Therapeutics, Inc.,1.66,0,0.0,ヘルスケア,
+ALEC,Alector, Inc.,2.41,0,0.0,ヘルスケア,
+ALF,Centurion Acquisition Corp.,10.8,0,0.0,金融,
+ALFUU,Centurion Acquisition Corp.,10.79,0,0.0,金融,
+ALFUW,Centurion Acquisition Corp. War,0.09,0,0.0,,
+ALG,Alamo Group, Inc.,168.2,7600,1.28,資本財,"ex:2025-04-16|pay:2025-05:0.3, ex:2025-07-16|pay:2025-08:0.3, ex:2025-10-15|pay:2025-11:0.3, ex:2026-01-16|pay:2026-01:0.34"
+ALGM,Allegro MicroSystems, Inc.,32.6,0,0.0,情報技術,
+ALGN,Align Technology, Inc.,170.6,0,0.0,ヘルスケア,
+ALGS,Aligos Therapeutics, Inc.,7.97,0,0.0,ヘルスケア,
+ALGT,Allegiant Travel Company,82.83,0,0.0,資本財,
+ALH,Alliance Laundry Holdings Inc.,21.36,0,0.0,一般消費財,
+ALHC,Alignment Healthcare, Inc.,18.76,0,0.0,ヘルスケア,
+ALIL,Argent Focused Small Cap ETF,28.07,0,0.0,,
+ALIS,Calisa Acquisition Corp,9.98,0,0.0,金融,
+ALISR,Calisa Acquisition Corp,0.55,0,0.0,,
+ALISU,Calisa Acquisition Corp,10.51,0,0.0,金融,
+ALIT,Alight, Inc.,0.55,1684,0.16,情報技術,"ex:2025-06-02|pay:2025-07:0.04, ex:2025-09-02|pay:2025-10:0.04, ex:2025-12-01|pay:2025-12:0.04"
+ALK,Alaska Air Group, Inc.,37.33,0,0.0,資本財,
+ALKS,Alkermes plc,34.84,0,0.0,ヘルスケア,
+ALKT,Alkami Technology, Inc.,16.56,0,0.0,情報技術,
