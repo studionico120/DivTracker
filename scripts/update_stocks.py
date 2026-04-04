@@ -47,67 +47,72 @@ DATA_DIR = REPO_ROOT / "data"
 JP_CSV = DATA_DIR / "jp_stocks.csv"
 US_CSV = DATA_DIR / "us_stocks.csv"
 OVERRIDES_FILE = DATA_DIR / "overrides.json"
+JP_MASTER = DATA_DIR / "jp_ticker_master.csv"
+US_MASTER = DATA_DIR / "us_ticker_master.csv"
 
-# === 銘柄リスト ===
+# === 銘柄マスタの読み込み ===
 #
-# 日本株：("日本語企業名", "セクター") のタプルで定義
-#   → yfinance は英語名（"Mitsubishi Corp."）しか返さないため、
-#     ここで日本語名を定義しておく。
-#   → 銘柄追加時にこの辞書に1行追加するだけで、名前もセクターも反映される。
+# 銘柄リストは Python ファイル内に直書きせず、
+# CSV ファイル（data/jp_ticker_master.csv, data/us_ticker_master.csv）から読み込む。
 #
-# 米国株："セクター" の文字列のみ
-#   → 企業名は yfinance から自動取得（英語のまま使う）
+# 銘柄の追加・削除は CSV を編集するだけ。
+# Excel / Google Sheets / テキストエディタ、どれでも編集できる。
+#
+# CSVフォーマット：
+#   日本株：ticker,name,sector  （例：8058,三菱商事,商社）
+#   米国株：ticker,sector       （例：AAPL,Technology）
 #
 
-JP_TICKERS = {
-    # "ティッカー.T": ("日本語名", "セクター"),
-    "8058.T": ("三菱商事", "商社"),
-    "8031.T": ("三井物産", "商社"),
-    "8001.T": ("伊藤忠商事", "商社"),
-    "9432.T": ("日本電信電話", "通信"),
-    "9433.T": ("KDDI", "通信"),
-    "9434.T": ("ソフトバンク", "通信"),
-    "8306.T": ("三菱UFJフィナンシャル・グループ", "金融"),
-    "8316.T": ("三井住友フィナンシャルグループ", "金融"),
-    "8411.T": ("みずほフィナンシャルグループ", "金融"),
-    "2914.T": ("日本たばこ産業", "食品"),
-    "7203.T": ("トヨタ自動車", "自動車"),
-    "4502.T": ("武田薬品工業", "医薬品"),
-    "4503.T": ("アステラス製薬", "医薬品"),
-    "6758.T": ("ソニーグループ", "電機"),
-    "6861.T": ("キーエンス", "電機"),
-    "8766.T": ("東京海上ホールディングス", "保険"),
-    "8591.T": ("オリックス", "金融"),
-    "9101.T": ("日本郵船", "海運"),
-    "1928.T": ("積水ハウス", "建設"),
-    "5020.T": ("ENEOSホールディングス", "石油"),
-}
+def load_jp_master() -> dict[str, tuple[str, str]]:
+    """
+    日本株マスタCSVを読み込み、辞書に変換する。
+    
+    戻り値: { "8058.T": ("三菱商事", "商社"), ... }
+    
+    CSVの ticker 列は「8058」（.T なし）で記載し、
+    読み込み時に「.T」を自動付与する。
+    """
+    result = {}
+    if not JP_MASTER.exists():
+        print(f"⚠ {JP_MASTER} が見つかりません。空の銘柄リストで続行します。")
+        return result
+    
+    df = pd.read_csv(JP_MASTER, dtype=str)
+    for _, row in df.iterrows():
+        ticker = row["ticker"].strip()
+        name = row["name"].strip()
+        sector = row["sector"].strip()
+        yf_ticker = f"{ticker}.T"  # yfinance 用に .T を付与
+        result[yf_ticker] = (name, sector)
+    
+    return result
 
-US_TICKERS = {
-    # "ティッカー": "セクター",
-    # 企業名は yfinance の info["shortName"] から自動取得
-    "AAPL": "Technology",
-    "MSFT": "Technology",
-    "JNJ": "Healthcare",
-    "PG": "Consumer Staples",
-    "KO": "Consumer Staples",
-    "PEP": "Consumer Staples",
-    "MCD": "Consumer Discretionary",
-    "VZ": "Communication",
-    "T": "Communication",
-    "XOM": "Energy",
-    "CVX": "Energy",
-    "ABBV": "Healthcare",
-    "PFE": "Healthcare",
-    "MO": "Consumer Staples",
-    "PM": "Consumer Staples",
-    "IBM": "Technology",
-    "MMM": "Industrials",
-    "INTC": "Technology",
-    "CSCO": "Technology",
-    "HD": "Consumer Discretionary",
-    "O": "Real Estate",
-}
+
+def load_us_master() -> dict[str, str]:
+    """
+    米国株マスタCSVを読み込み、辞書に変換する。
+    
+    戻り値: { "AAPL": "Technology", ... }
+    
+    企業名は yfinance から自動取得するため、CSVには不要。
+    """
+    result = {}
+    if not US_MASTER.exists():
+        print(f"⚠ {US_MASTER} が見つかりません。空の銘柄リストで続行します。")
+        return result
+    
+    df = pd.read_csv(US_MASTER, dtype=str)
+    for _, row in df.iterrows():
+        ticker = row["ticker"].strip()
+        sector = row["sector"].strip()
+        result[ticker] = sector
+    
+    return result
+
+
+# スクリプト起動時に読み込み（グローバル変数として保持）
+JP_TICKERS: dict[str, tuple[str, str]] = {}
+US_TICKERS: dict[str, str] = {}
 
 
 def get_jp_name(ticker_symbol: str) -> str:
@@ -409,10 +414,20 @@ def write_us_csv(data: list[dict], path: Path):
 
 def main():
     log("=" * 60)
-    log("配当プラス 株価データ自動更新 v2.0")
+    log("配当プラス 株価データ自動更新 v2.1")
     log("=" * 60)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 銘柄マスタの読み込み
+    global JP_TICKERS, US_TICKERS
+    JP_TICKERS = load_jp_master()
+    US_TICKERS = load_us_master()
+    log(f"銘柄マスタ: 日本株 {len(JP_TICKERS)}銘柄, 米国株 {len(US_TICKERS)}銘柄")
+
+    if not JP_TICKERS and not US_TICKERS:
+        log("✗ 銘柄マスタが空です。data/jp_ticker_master.csv, data/us_ticker_master.csv を確認してください。")
+        sys.exit(1)
 
     # 手動補正データの読み込み
     overrides = load_overrides()
