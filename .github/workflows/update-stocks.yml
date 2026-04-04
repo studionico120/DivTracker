@@ -2,10 +2,9 @@ name: Update Stock Data
 
 on:
   schedule:
-    # 毎週日曜 UTC 15:00（日本時間 月曜 0:00）に実行
+    # 毎週日曜 UTC 15:00（日本時間 月曜 0:00）
     - cron: '0 15 * * 0'
   workflow_dispatch:
-    # 手動実行も可能
 
 permissions:
   contents: write
@@ -13,7 +12,7 @@ permissions:
 jobs:
   update-stock-data:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90  # 大量銘柄対応（無料枠: 2000分/月に対し月4回=360分）
 
     steps:
       - name: Checkout repository
