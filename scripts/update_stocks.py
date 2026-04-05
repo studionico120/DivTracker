@@ -363,16 +363,24 @@ def merge_with_existing(new_data: list[dict], existing_df: pd.DataFrame | None,
     return new_data
 
 
+def csv_quote(value: str) -> str:
+    """カンマを含むフィールドをダブルクォートで囲む（RFC 4180準拠）"""
+    s = str(value)
+    if "," in s or '"' in s:
+        return '"' + s.replace('"', '""') + '"'
+    return s
+
+
 def write_jp_csv(data: list[dict], path: Path):
     rows = []
     for d in sorted(data, key=lambda x: x["ticker"]):
         code = d["ticker"].replace(".T", "")
-        details = d.get("div_details", "")
-        if "," in str(details):
-            details = f'"{details}"'
+        name = csv_quote(d["name"])
+        sector = csv_quote(d["sector"])
+        details = csv_quote(d.get("div_details", ""))
         rows.append(
-            f'{code},{d["name"]},{d["price"]},{d["yield_x100"]},'
-            f'{d["annual_div"]},{d["sector"]},{details}'
+            f'{code},{name},{d["price"]},{d["yield_x100"]},'
+            f'{d["annual_div"]},{sector},{details}'
         )
     header = "銘柄コード,企業名,価格,利回り(%),年間配当,セクター,配当内訳"
     content = header + "\n" + "\n".join(rows) + "\n"
@@ -383,12 +391,12 @@ def write_jp_csv(data: list[dict], path: Path):
 def write_us_csv(data: list[dict], path: Path):
     rows = []
     for d in sorted(data, key=lambda x: x["ticker"]):
-        details = d.get("div_details", "")
-        if "," in str(details):
-            details = f'"{details}"'
+        name = csv_quote(d["name"])
+        sector = csv_quote(d["sector"])
+        details = csv_quote(d.get("div_details", ""))
         rows.append(
-            f'{d["ticker"]},{d["name"]},{d["price"]},{d["yield_x100"]},'
-            f'{d["annual_div"]},{d["sector"]},{details}'
+            f'{d["ticker"]},{name},{d["price"]},{d["yield_x100"]},'
+            f'{d["annual_div"]},{sector},{details}'
         )
     header = "Ticker,Company,Price,Yield(%),AnnualDiv,Sector,DivDetails"
     content = header + "\n" + "\n".join(rows) + "\n"
