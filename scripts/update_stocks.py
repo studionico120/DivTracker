@@ -167,23 +167,46 @@ def process_ticker(ticker: str, market: str, one_year_ago) -> dict | str | None:
             return None
 
         price = info.get("regularMarketPrice") or info.get("currentPrice", 0) or 0
-        dividend_rate = info.get("dividendRate", 0) or 0
 
-        # ★ 利回りは自力計算（yfinance の dividendYield は100倍ズレることがあるため）
-        #   年間配当額 ÷ 株価 で正確に算出
+        # === 年間配当額の取得（2段階フォールバック） ===
+        #
+        # 優先1: info["dividendRate"]（通常株で取得可能）
+        # 優先2: ticker.dividends から過去1年の合計を自力計算
+        #        → ETF（JEPI, SCHD, VYM 等）では dividendRate が
+        #          MISSING になるため、こちらで補完する
+        #
+        dividend_rate = info.get("dividendRate", 0) or 0
+        div_details = ""
+        annual_div_from_history = 0
+
+        # 配当履歴は常にチェックする（dividendRate の有無に関わらず）
+        try:
+            dividends = stock.dividends
+            if dividends is not None and not dividends.empty:
+                one_year_ts = pd.Timestamp.now(tz="UTC") - pd.DateOffset(years=1)
+                if dividends.index.tz is None:
+                    dividends.index = dividends.index.tz_localize("UTC")
+                recent = dividends[dividends.index >= one_year_ts]
+                if not recent.empty:
+                    annual_div_from_history = round(float(recent.sum()), 4)
+                    div_details = get_dividend_details(stock, market)
+        except Exception:
+            pass
+
+        # dividendRate が取れなかった場合、履歴から補完
+        if dividend_rate == 0 and annual_div_from_history > 0:
+            dividend_rate = annual_div_from_history
+
+        # 利回りは自力計算（年間配当額 ÷ 株価）
         if price > 0 and dividend_rate > 0:
             yield_x100 = round(dividend_rate / float(price) * 10000)
         else:
             yield_x100 = 0
 
-        # ★ 企業名の検証（yfinance が数値を返すことがある → ティッカーで代替）
+        # 企業名の検証（数値のみの場合はティッカーで代替）
         yf_name = info.get("shortName") or info.get("longName") or ""
         if not yf_name or yf_name.replace(".", "").replace("-", "").isdigit():
             yf_name = ticker.replace(".T", "")
-
-        div_details = ""
-        if dividend_rate > 0:
-            div_details = get_dividend_details(stock, market)
 
         return {
             "ticker": ticker,
