@@ -47,6 +47,7 @@ JP_MASTER = DATA_DIR / "jp_ticker_master.csv"
 US_MASTER = DATA_DIR / "us_ticker_master.csv"
 JP_PROGRESS = DATA_DIR / "_jp_progress.csv"
 US_PROGRESS = DATA_DIR / "_us_progress.csv"
+METADATA_FILE = DATA_DIR / "metadata.json"
 
 # グローバル
 JP_TICKERS: dict[str, tuple[str, str]] = {}
@@ -395,6 +396,34 @@ def write_us_csv(data: list[dict], path: Path):
     log(f"✓ {path.name}: {len(rows)}銘柄を書き出し")
 
 
+def write_metadata(jp_count: int, us_count: int):
+    """
+    metadata.json を自動生成する。
+    アプリはこのファイルを参照して、データ更新の有無を判断する。
+
+    従来は手動更新だったが、GitHub Actions での自動生成に移行。
+    バージョンは更新日時ベースの自動採番（YYYY.MM.DD 形式）。
+    """
+    now = datetime.now()
+    # バージョン: 年.月.日 形式（例: 2026.04.06）
+    version = now.strftime("%Y.%-m.%-d")
+    # ISO 8601 形式（日本時間）
+    last_updated = now.strftime("%Y-%m-%dT%H:%M:%S+09:00")
+
+    metadata = {
+        "lastUpdated": last_updated,
+        "version": version,
+        "jpStocksCount": jp_count,
+        "usStocksCount": us_count,
+    }
+
+    METADATA_FILE.write_text(
+        json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    log(f"✓ metadata.json: version={version}, JP={jp_count}, US={us_count}")
+
+
 def cleanup_progress():
     for f in [JP_PROGRESS, US_PROGRESS]:
         if f.exists():
@@ -453,6 +482,9 @@ def main():
     write_us_csv(us_data, US_CSV)
 
     cleanup_progress()
+
+    # --- metadata.json の自動生成 ---
+    write_metadata(len(jp_data), len(us_data))
 
     # --- サマリー ---
     jp_ok = sum(1 for d in jp_data if d["price"] > 0)
