@@ -427,18 +427,43 @@ def write_us_csv(data: list[dict], path: Path):
     log(f"✓ {path.name}: {len(rows)}銘柄を書き出し")
 
 
-def write_metadata(jp_count: int, us_count: int):
+def fetch_usd_jpy_rate() -> float:
+    """
+    yfinance で USD/JPY 為替レートを取得する。
+    取得失敗時はフォールバック値 150.0 を返す。
+    """
+    try:
+        ticker = yf.Ticker("USDJPY=X")
+        info = ticker.info or {}
+        rate = info.get("regularMarketPrice", 0) or 0
+        if rate > 0:
+            rate = round(float(rate), 2)
+            log(f"✓ USD/JPY レート: {rate}")
+            return rate
+    except Exception as e:
+        log(f"⚠ USD/JPY 取得エラー: {e}")
+
+    # フォールバック: 既存の metadata.json から前回値を読む
+    if METADATA_FILE.exists():
+        try:
+            existing = json.loads(METADATA_FILE.read_text(encoding="utf-8"))
+            prev_rate = existing.get("usdJpyRate", 150.0)
+            log(f"⚠ USD/JPY: 前回値を使用 ({prev_rate})")
+            return float(prev_rate)
+        except Exception:
+            pass
+
+    log(f"⚠ USD/JPY: フォールバック値 150.0 を使用")
+    return 150.0
+
+
+def write_metadata(jp_count: int, us_count: int, usd_jpy_rate: float):
     """
     metadata.json を自動生成する。
-    アプリはこのファイルを参照して、データ更新の有無を判断する。
-
-    従来は手動更新だったが、GitHub Actions での自動生成に移行。
-    バージョンは更新日時ベースの自動採番（YYYY.MM.DD 形式）。
+    アプリはこのファイルを参照して、データ更新の有無と為替レートを取得する。
     """
     now = datetime.now()
-    # バージョン: 年.月.日 形式（例: 2026.04.06）
     version = now.strftime("%Y.%-m.%-d")
-    # ISO 8601 形式（日本時間）
     last_updated = now.strftime("%Y-%m-%dT%H:%M:%S+09:00")
 
     metadata = {
@@ -446,13 +471,14 @@ def write_metadata(jp_count: int, us_count: int):
         "version": version,
         "jpStocksCount": jp_count,
         "usStocksCount": us_count,
+        "usdJpyRate": usd_jpy_rate,
     }
 
     METADATA_FILE.write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-    log(f"✓ metadata.json: version={version}, JP={jp_count}, US={us_count}")
+    log(f"✓ metadata.json: version={version}, JP={jp_count}, US={us_count}, USD/JPY={usd_jpy_rate}")
 
 
 def cleanup_progress():
@@ -514,8 +540,12 @@ def main():
 
     cleanup_progress()
 
+    # --- USD/JPY 為替レートの取得 ---
+    log("\n=== 為替レート取得 ===")
+    usd_jpy_rate = fetch_usd_jpy_rate()
+
     # --- metadata.json の自動生成 ---
-    write_metadata(len(jp_data), len(us_data))
+    write_metadata(len(jp_data), len(us_data), usd_jpy_rate)
 
     # --- サマリー ---
     jp_ok = sum(1 for d in jp_data if d["price"] > 0)
