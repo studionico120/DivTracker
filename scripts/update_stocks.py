@@ -1,5 +1,17 @@
 """
-配当プラス - 株価データ自動更新スクリプト v3.4
+配当プラス - 株価データ自動更新スクリプト v3.5
+
+v3.4 からの変更点：
+  - 支払い月の推定を刷新（scripts/paydate.py）
+    ・従来は Yahoo の dividendDate を「履歴の直近の権利落ち日」に当てていたが、これは次回の
+      配当の支払日で対応しない（MSFT は 8 月の権利落ちに 12 月の支払いが付いた）。
+      exDividendDate と dividendDate の組が揃うときだけ使い、権利落ち→支払いの日数を
+      履歴の全件に当てはめる
+    ・組がない銘柄は、市場・種別ごとの既定値（米国 ETF +1 日、米国個別株 +14 日、
+      日本 ETF +37 日、日本個別株 +3 か月）。旧: 日本株 +3 か月、米国株 +1 か月の固定
+    ・根拠は 2026-09-30 の標本監査（30 銘柄）。米国株の支払い月の一致 10% → 試算で 90% 以上
+  - 環境変数 LIMIT_TICKERS で、市場ごとの取得銘柄数を絞れる（動作確認用。0 または未設定で全件）
+  - 取得失敗で前回値を引き継ぐ銘柄の、空の企業名を補完（前回の名前 → ティッカー）
 
 v3.3 からの変更点：
   - 利回りを yfinance の dividendYield に頼らず、自力計算に変更
@@ -23,8 +35,10 @@ import sys
 import os
 from pathlib import Path
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from paydate import estimate_pay_months, sanitize_details
 
 # === 設定 ===
 MAX_WORKERS = 3
@@ -34,8 +48,8 @@ BASE_SLEEP_MAX = 1.5
 BATCH_SLEEP = 2
 RATE_LIMIT_SLEEP = 180
 
-PAYMENT_OFFSET_JP = 3
-PAYMENT_OFFSET_US = 1
+# 支払い月の推定の根拠ごとの件数（銘柄数）。市場ごとに fetch_market の最後にログへ出す
+PAYDATE_SOURCES: Counter = Counter()
 
 # パス設定
 REPO_ROOT = Path(__file__).parent.parent
@@ -106,17 +120,11 @@ def load_overrides() -> dict:
 
 # === 配当関連 ===
 
-def estimate_payment_month(ex_date, market: str) -> str:
-    offset = PAYMENT_OFFSET_JP if market == "JP" else PAYMENT_OFFSET_US
-    if hasattr(ex_date, 'to_pydatetime'):
-        ex_date = ex_date.to_pydatetime()
-    if ex_date.tzinfo is not None:
-        ex_date = ex_date.replace(tzinfo=None)
-    payment_date = ex_date + relativedelta(months=offset)
-    return payment_date.strftime("%Y-%m")
+def get_dividend_details(ticker_obj, market: str, info: dict | None = None) -> str:
+    """配当内訳の文字列 "ex:YYYY-MM-DD|pay:YYYY-MM:金額, ..." を作る。
 
-
-def get_dividend_details(ticker_obj, market: str) -> str:
+    支払い月は scripts/paydate.py の estimate_pay_months で決める（実際の支払日ではなく推定）。
+    """
     try:
         dividends = ticker_obj.dividends
         if dividends is None or dividends.empty:
@@ -129,29 +137,39 @@ def get_dividend_details(ticker_obj, market: str) -> str:
         if recent.empty:
             return ""
 
-        next_payment = None
-        try:
-            info = ticker_obj.info or {}
-            div_date = info.get("dividendDate")
-            if div_date and isinstance(div_date, (int, float)):
-                next_payment = datetime.fromtimestamp(div_date).strftime("%Y-%m")
-        except Exception:
-            pass
+        if info is None:
+            try:
+                info = ticker_obj.info or {}
+            except Exception:
+                info = {}
 
-        parts = []
         items = list(recent.items())
-        for idx, (date, amount) in enumerate(items):
-            ex_date_str = date.strftime("%Y-%m-%d")
-            is_latest = (idx == len(items) - 1)
-            if is_latest and next_payment:
-                pay_month = next_payment
-            else:
-                pay_month = estimate_payment_month(date, market)
-            parts.append(f"ex:{ex_date_str}|pay:{pay_month}:{round(amount, 4)}")
+        ex_dates = [ts.date() for ts, _ in items]     # 取引所の現地の日付
+        pay_months, source = estimate_pay_months(ex_dates, market, info)
+        kind = "ETF" if (info.get("quoteType") or "").upper() in ("ETF", "MUTUALFUND") else "株式"
+        PAYDATE_SOURCES[(market, kind, source)] += 1
 
+        parts = [
+            f"ex:{ex.strftime('%Y-%m-%d')}|pay:{pay_month}:{round(amount, 4)}"
+            for ex, pay_month, (_, amount) in zip(ex_dates, pay_months, items)
+        ]
         return ", ".join(parts)
     except Exception:
         return ""
+
+
+def log_paydate_sources(market: str):
+    """支払い月の推定の根拠の内訳をログに出す（Yahoo の支払日がどれだけ使えたかの確認用）"""
+    rows = {(k, src): n for (m, k, src), n in PAYDATE_SOURCES.items() if m == market}
+    if not rows:
+        return
+    log(f"  支払い月の推定の根拠（{market}）:")
+    for kind in ("株式", "ETF"):
+        counts = {src: n for (k, src), n in rows.items() if k == kind}
+        total = sum(counts.values())
+        if total:
+            detail = "、".join(f"{src} {n}件（{n * 100 // total}%）" for src, n in sorted(counts.items()))
+            log(f"    {kind}: 計 {total}銘柄 … {detail}")
 
 
 # === 1銘柄の取得 ===
@@ -189,7 +207,7 @@ def process_ticker(ticker: str, market: str, one_year_ago) -> dict | str | None:
                 recent = dividends[dividends.index >= one_year_ts]
                 if not recent.empty:
                     annual_div_from_history = round(float(recent.sum()), 4)
-                    div_details = get_dividend_details(stock, market)
+                    div_details = get_dividend_details(stock, market, info)
         except Exception:
             pass
 
@@ -221,6 +239,13 @@ def process_ticker(ticker: str, market: str, one_year_ago) -> dict | str | None:
         if "429" in str(e) or "Too Many Requests" in str(e) or "Rate" in str(e):
             return "BLOCK"
         return None
+
+
+def limit_symbols(symbols: list[str], limit: int, seed: int = 20260930) -> list[str]:
+    """動作確認用に、取得する銘柄を無作為（固定シード）に limit 件へ絞る。limit が 0 以下なら全件"""
+    if limit <= 0 or limit >= len(symbols):
+        return symbols
+    return random.Random(seed).sample(sorted(symbols), limit)
 
 
 # === 市場ごとの取得（レジューム対応） ===
@@ -317,6 +342,7 @@ def fetch_market(symbols: list[str], market: str, progress_file: Path) -> list[d
     total_success = len(done_tickers) + batch_success
     log(f"  ✓ 完了: {total_success}/{total_all}銘柄取得 "
         f"({int(elapsed_total / 60)}分{int(elapsed_total % 60)}秒)")
+    log_paydate_sources(market)
 
     return results
 
@@ -331,7 +357,7 @@ def build_final_data(raw_data: list[dict], market: str) -> list[dict]:
             d["name"] = entry[0] if entry else d.get("yf_name", "")
             d["sector"] = entry[1] if entry else ""
         else:
-            d["name"] = d.get("yf_name", "")
+            d["name"] = d.get("yf_name") or symbol      # 取得失敗で空の場合はティッカーで代替
             d["sector"] = US_TICKERS.get(symbol, "")
     return raw_data
 
@@ -358,7 +384,7 @@ def load_existing_csv(path: Path) -> pd.DataFrame | None:
 
 
 def merge_with_existing(new_data: list[dict], existing_df: pd.DataFrame | None,
-                        ticker_col: str) -> list[dict]:
+                        ticker_col: str, market: str = "US") -> list[dict]:
     if existing_df is None:
         return new_data
     if ticker_col not in existing_df.columns:
@@ -372,6 +398,10 @@ def merge_with_existing(new_data: list[dict], existing_df: pd.DataFrame | None,
         if not match.empty:
             row = match.iloc[0]
             cols = list(existing_df.columns)
+            # 企業名が取得できていない（空、またはティッカーで代替）場合は、前回の名前を引き継ぐ
+            if len(cols) > 1 and pd.notna(row[cols[1]]) and str(row[cols[1]]).strip():
+                if not d.get("name") or d["name"] == d["ticker"].replace(".T", ""):
+                    d["name"] = str(row[cols[1]])
             try:
                 d["price"] = float(row[cols[2]]) if len(cols) > 2 and row[cols[2]] else 0
                 if d["yield_x100"] == 0 and len(cols) > 3 and row[cols[3]]:
@@ -379,7 +409,9 @@ def merge_with_existing(new_data: list[dict], existing_df: pd.DataFrame | None,
                 if d["annual_div"] == 0 and len(cols) > 4 and row[cols[4]]:
                     d["annual_div"] = float(row[cols[4]])
                 if not d.get("div_details") and len(cols) > 6:
-                    d["div_details"] = str(row[cols[6]]) if pd.notna(row[cols[6]]) else ""
+                    carried = str(row[cols[6]]) if pd.notna(row[cols[6]]) else ""
+                    # 前回の値の支払い月の異常値（古い日付など）は、検証が止まらないよう補正して引き継ぐ
+                    d["div_details"] = sanitize_details(carried, market)
             except (ValueError, IndexError):
                 pass
 
@@ -511,6 +543,10 @@ def main():
         log("✗ 銘柄マスタが空です")
         sys.exit(1)
 
+    limit = int(os.environ.get("LIMIT_TICKERS", "0") or "0")
+    if limit > 0:
+        log(f"⚠ LIMIT_TICKERS={limit}: 動作確認モード（市場ごとに {limit} 銘柄だけ取得。公開用のデータではない）")
+
     overrides = load_overrides()
     existing_jp = load_existing_csv(JP_CSV)
     existing_us = load_existing_csv(US_CSV)
@@ -519,10 +555,10 @@ def main():
     log("\n" + "=" * 60)
     log(f"=== 日本株 ({len(JP_TICKERS)}銘柄) ===")
     log("=" * 60)
-    jp_raw = fetch_market(list(JP_TICKERS.keys()), market="JP", progress_file=JP_PROGRESS)
+    jp_raw = fetch_market(limit_symbols(list(JP_TICKERS.keys()), limit), market="JP", progress_file=JP_PROGRESS)
     jp_data = build_final_data(jp_raw, market="JP")
     jp_data = apply_overrides(jp_data, overrides)
-    jp_data = merge_with_existing(jp_data, existing_jp, "銘柄コード")
+    jp_data = merge_with_existing(jp_data, existing_jp, "銘柄コード", "JP")
     write_jp_csv(jp_data, JP_CSV)
 
     log(f"\n... 市場切替: 30秒待機 ...\n")
@@ -532,10 +568,10 @@ def main():
     log("=" * 60)
     log(f"=== 米国株 ({len(US_TICKERS)}銘柄) ===")
     log("=" * 60)
-    us_raw = fetch_market(list(US_TICKERS.keys()), market="US", progress_file=US_PROGRESS)
+    us_raw = fetch_market(limit_symbols(list(US_TICKERS.keys()), limit), market="US", progress_file=US_PROGRESS)
     us_data = build_final_data(us_raw, market="US")
     us_data = apply_overrides(us_data, overrides)
-    us_data = merge_with_existing(us_data, existing_us, "Ticker")
+    us_data = merge_with_existing(us_data, existing_us, "Ticker", "US")
     write_us_csv(us_data, US_CSV)
 
     cleanup_progress()

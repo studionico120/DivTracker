@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+# 更新スクリプトの中間ファイル（実行中だけ data/ に作られる）
+data/_*_progress.csv
