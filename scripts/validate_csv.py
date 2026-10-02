@@ -1,5 +1,14 @@
 """
-配当プラス - CSVデータ検証スクリプト v2.1
+配当プラス - CSVデータ検証スクリプト v2.2
+
+v2.1 からの変更点：
+  - 支払い月の整合性を検査（エラー）: 支払い月が権利落ち月より前、または 6 か月以上後の
+    配当内訳が 1 件でもあれば止める（2026-09 時点で 514 銘柄にあった異常値の再発防止）
+  - 前回のデータ（git の HEAD の CSV）との比較を追加（エラー）: 銘柄数、または配当のある銘柄数が
+    前回より 10% 以上減っていたら止める。Yahoo が突然配当を返さなくなった場合に、
+    株価だけ取れていて検証を通り、配当なしのデータで公開されるのを防ぐ
+    ・LIMIT_TICKERS（動作確認用）が設定されているとき、または SKIP_REGRESSION_GUARD=1 のときは省略
+  - 配当内訳のフォーマット不正は、従来どおり警告のみ
 
 v2.0 からの変更点：
   - 利回り異常を「エラー」から「警告」に格下げ
@@ -9,7 +18,10 @@ v2.0 からの変更点：
 """
 
 import csv
+import io
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -27,8 +39,64 @@ DIV_DETAIL_PATTERN = re.compile(
     r"ex:\d{4}-\d{2}-\d{2}\|pay:\d{4}-\d{2}:\d+\.?\d*"
 )
 
+# 支払い月が権利落ち月から何か月後まで許すか（0〜5 か月）。推定の上限は遅れ 120 日 ≒ 4 か月
+MAX_PAY_MONTH_GAP = 5
+# 前回比で、この割合を下回ったらエラー
+MIN_RATIO_VS_PREVIOUS = 0.9
+
+PAY_MONTH_ENTRY = re.compile(r"ex:(\d{4})-(\d{2})-\d{2}\|pay:(\d{4})-(\d{2}):")
+
 errors = []
 warnings = []
+
+
+def find_pay_month_violations(details: str) -> list[str]:
+    """支払い月が権利落ち月より前、または MAX_PAY_MONTH_GAP か月を超えて後の配当内訳を返す"""
+    bad = []
+    for entry in (details or "").split(","):
+        m = PAY_MONTH_ENTRY.search(entry)
+        if not m:
+            continue
+        ey, em, py, pm = (int(x) for x in m.groups())
+        gap = (py * 12 + pm) - (ey * 12 + em)
+        if gap < 0 or gap > MAX_PAY_MONTH_GAP:
+            bad.append(entry.strip())
+    return bad
+
+
+def regression_messages(new_rows: list[list[str]], prev_rows: list[list[str]],
+                        div_col: int, name: str, min_ratio: float = MIN_RATIO_VS_PREVIOUS) -> list[str]:
+    """前回のデータと比べて、銘柄数・配当のある銘柄数が大きく減っていれば、エラーメッセージを返す"""
+    def count(rows):
+        data = rows[1:]
+        with_div = sum(1 for r in data if len(r) > div_col and r[div_col].strip())
+        return len(data), with_div
+
+    n_new, d_new = count(new_rows)
+    n_prev, d_prev = count(prev_rows)
+    msgs = []
+    if n_prev and n_new < n_prev * min_ratio:
+        msgs.append(f"{name}: 銘柄数が前回より {100 - n_new * 100 // n_prev}% 以上減少 ({n_prev} → {n_new})")
+    if d_prev and d_new < d_prev * min_ratio:
+        msgs.append(f"{name}: 配当のある銘柄数が前回より {100 - d_new * 100 // d_prev}% 以上減少 ({d_prev} → {d_new})")
+    return msgs
+
+
+def load_previous_rows(path: Path) -> list[list[str]] | None:
+    """git の HEAD にある前回の CSV を読む。取得できなければ None（初回など）"""
+    try:
+        rel = path.relative_to(REPO_ROOT).as_posix()
+        out = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=REPO_ROOT, capture_output=True,
+                             text=True, encoding="utf-8", check=True).stdout
+        return list(csv.reader(io.StringIO(out)))
+    except Exception:
+        return None
+
+
+def regression_guard_enabled() -> bool:
+    if os.environ.get("SKIP_REGRESSION_GUARD") == "1":
+        return False
+    return int(os.environ.get("LIMIT_TICKERS", "0") or "0") <= 0
 
 
 def error(msg: str):
@@ -86,6 +154,7 @@ def validate_csv(path: Path, expected_header: list[str],
     empty_prices = 0
     abnormal_yields = 0
     zero_prices = 0
+    pay_month_violations = []   # (ティッカー, 配当内訳の 1 件)
 
     for i, row in enumerate(data_rows, start=2):
         if len(row) < expected_cols:
@@ -120,6 +189,8 @@ def validate_csv(path: Path, expected_header: list[str],
         # 配当内訳フォーマットチェック
         if len(row) > div_col:
             validate_div_details(ticker, row[div_col])
+            for entry in find_pay_month_violations(row[div_col]):
+                pay_month_violations.append((ticker, entry))
 
     # --- 結果サマリー ---
     ok_prices = len(data_rows) - empty_prices - zero_prices
@@ -135,10 +206,32 @@ def validate_csv(path: Path, expected_header: list[str],
     if empty_prices > len(data_rows) * 0.3:
         error(f"{path.name}: 30%以上の銘柄で株価取得失敗 ({empty_prices}/{len(data_rows)})")
 
+    # 支払い月の整合性（権利落ち月より前、または離れすぎ）
+    if pay_month_violations:
+        examples = "、".join(f"{t}: {e}" for t, e in pay_month_violations[:5])
+        error(f"{path.name}: 支払い月が権利落ち月より前、または {MAX_PAY_MONTH_GAP} か月を超えて後の配当内訳 "
+              f"{len(pay_month_violations)}件（例: {examples}）")
+    else:
+        print("  支払い月の整合性: 問題なし")
+
+    # 前回のデータとの比較
+    if regression_guard_enabled():
+        prev_rows = load_previous_rows(path)
+        if prev_rows:
+            msgs = regression_messages(rows, prev_rows, div_col, path.name)
+            for m in msgs:
+                error(m)
+            if not msgs:
+                print("  前回データとの比較: 問題なし")
+        else:
+            print("  前回データとの比較: 前回のデータがないため省略")
+    else:
+        print("  前回データとの比較: 動作確認モードのため省略")
+
 
 def main():
     print("=" * 50)
-    print("CSVデータ検証 v2.1")
+    print("CSVデータ検証 v2.2")
     print("=" * 50)
 
     validate_csv(

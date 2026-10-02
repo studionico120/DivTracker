@@ -2,17 +2,30 @@ name: Update Stock Data
 
 on:
   schedule:
-    # 毎週日曜 UTC 15:00（日本時間 月曜 0:00）
+    # 毎週日曜 UTC 15:00（日本時間 月曜 0:00）。実際の開始は数時間遅れることがあり、実行に約 3 時間かかる
     - cron: '0 15 * * 0'
   workflow_dispatch:
+    inputs:
+      limit_tickers:
+        description: '動作確認用: 市場ごとの取得銘柄数（0 で全件）。main 以外のブランチで実行したときは、結果をコミットせず artifact にだけ保存する'
+        required: false
+        default: '0'
 
 permissions:
   contents: write
+
+# 同時に 2 つ実行しない（実行が重なって、最後の push が競合するのを防ぐ）
+concurrency:
+  group: update-stock-data
+  cancel-in-progress: false
 
 jobs:
   update-stock-data:
     runs-on: ubuntu-latest
     timeout-minutes: 360  # 6時間（GitHub Actions の上限値）
+    env:
+      # 動作確認用の銘柄数の上限。定期実行では未設定なので 0（全件）になる
+      LIMIT_TICKERS: ${{ github.event.inputs.limit_tickers || '0' }}
 
     steps:
       - name: Checkout repository
@@ -27,13 +40,32 @@ jobs:
         run: |
           pip install yfinance pandas python-dateutil
 
+      # 約 3 時間かかる更新の前に、ロジックの単体テストで早く失敗させる
+      - name: Run unit tests
+        run: python -m unittest discover -s scripts -p "test_*.py" -v
+
       - name: Run stock data updater
         run: python scripts/update_stocks.py
 
       - name: Validate output
         run: python scripts/validate_csv.py
 
+      # 検証で失敗した場合も、原因の調査用に出力を残す
+      - name: Upload data as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-data-${{ github.run_id }}
+          path: |
+            data/jp_stocks.csv
+            data/us_stocks.csv
+            data/metadata.json
+          retention-days: 14
+          if-no-files-found: warn
+
+      # main の全件更新のときだけ公開する（ブランチでの動作確認・銘柄数を絞った実行では公開しない）
       - name: Commit and push if changed
+        if: github.ref == 'refs/heads/main' && env.LIMIT_TICKERS == '0'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -44,5 +76,7 @@ jobs:
           else
             TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
             git commit -m "Auto-update stock data: ${TIMESTAMP}"
+            # 約 3 時間の実行中に main が進んでいても push できるよう、先に取り込む
+            git pull --rebase origin main
             git push
           fi
